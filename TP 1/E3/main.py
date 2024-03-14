@@ -18,6 +18,7 @@ def main():
         print("[1] Generar objetivo aleatorio")
         print("[2] Ingresar objetivo manualmente")
         print("[3] Recorrer")
+        print("[4] Tomar pedido")
 
         option = input("Ingrese una opción: ")
         print("====================================")
@@ -39,6 +40,10 @@ def main():
 
         elif option == 3:
             tablero.recorrer()
+
+        elif option == 4:
+            pedido = input("Ingrese el numero del pedido: ")
+            tablero.tomarPedido(pedido)
 
         else:
             print("Opción no válida")

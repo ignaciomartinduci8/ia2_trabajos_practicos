@@ -3,6 +3,8 @@ import random
 import matplotlib.pyplot as plt
 from Aestrella import Aestrella
 import time
+import json
+import numpy as np
 
 RED = "\033[1;31m"
 GREEN = "\033[0;32m"
@@ -21,11 +23,14 @@ class Tablero:
 
         self.agente = []
         self.camino = []
+        self.pedido = []
 
         self.tablero = []
         self.generarTablero()
         self.crearAgente()
+        self.regenerarPedido()
         self.plotearTablero()
+
 
     def generarTablero(self):
 
@@ -138,6 +143,133 @@ class Tablero:
             time.sleep(1)
 
         print(f"{GREEN}Recorrido finalizado{RESET}")
+
+    def regenerarPedido(self):
+
+        numero_orden = None
+        datos = None
+
+        with open("./data/pedidos.txt", "r") as file:
+            datos = file.read()
+
+        allPedidos = []
+        pedidos = []
+
+        for line in datos.split("\n"):
+
+            if "Order" in line:
+
+                numero_orden = int(line.replace("Order ", ""))
+                pedidos = []
+
+            elif "P" in line:
+
+                pedidos.append(int(line.replace("P", "")))
+
+            elif line == "\n" or line == "" or line == " " or line == " \n":
+                allPedidos.append({"orden": numero_orden, "pedidos": pedidos})
+
+        with open("./data/pedidos.json", "w") as file:
+            json.dump(allPedidos, file)
+
+    def tomarPedido(self, pedido):
+
+        pedido = int(pedido)
+
+        with open("./data/pedidos.json", "r") as file:
+            datos = json.load(file)
+
+        ok = 0
+
+        for orden in datos:
+            if orden["orden"] == pedido:
+                ok = 1
+
+        if not ok:
+            print(f"{RED}El pedido no existe{RESET}")
+            return
+
+        self.pedido = datos[int(pedido) - 1]["pedidos"]
+
+        self.reordenarPedido()
+
+        pass
+
+    def reordenarPedido(self):
+
+        T0 = 50 # No mejoró por subirla
+        Tf = 0.001 # No mejoró por disminuir
+        alpha = 0.90 # 0.9 es la mejor relacion costo-tiempo
+        T = T0
+        L = 15 # 15 es la mejor relación costo-tiempo. Probar L=10 o L=5 da costos mayores, L=20 es muy costoso en tiempo
+
+        costo_actual = self.costoPlan()
+
+        while Tf <= T:
+
+            for i in range(1, L):
+
+                pedido_mejor = self.pedido.copy()
+                random.shuffle(self.pedido)
+
+                costo_nuevo = self.costoPlan()
+
+                delta = costo_nuevo - costo_actual
+
+                if delta < 0:
+
+                    print("mejor")
+                    self.pedido = pedido_mejor
+                    costo_actual = costo_nuevo
+
+                elif random.random() <= np.exp(-delta/T):
+
+                    print("random")
+                    self.pedido = pedido_mejor
+                    costo_actual = costo_nuevo
+
+            T = alpha * T
+
+        pass
+
+        print(f"{GREEN}Pedido exitosamente optimizado{RESET}")
+        print(f"{GREEN}Plan: {RESET}{self.pedido}")
+        print(f"{GREEN}Costo del plan: {RESET}{costo_actual}")
+
+    def costoPlan(self):
+
+        costo = 0
+
+        actual = self.agente
+        objetivo_actual = None
+
+        for i in range(self.filas):
+            for j in range(self.columnas):
+                if self.tablero[i][j].getAlias() == self.pedido[0]:
+                    objetivo_actual = [i, j]
+
+        a_estrella = Aestrella(actual, objetivo_actual, self.tablero)
+        costo += a_estrella.getCosto()
+
+        for i in range(len(self.pedido)):
+
+            actual = objetivo_actual
+            objetivo_actual = None
+
+            for j in range(self.filas):
+                for k in range(self.columnas):
+                    if self.tablero[j][k].getAlias() == self.pedido[i]:
+                        objetivo_actual = [j, k]
+
+            a_estrella = Aestrella(actual, objetivo_actual, self.tablero)
+            costo += a_estrella.getCosto()
+
+        print(f"Plan: {self.pedido}")
+        print(f"{GREEN}Calculo del costo del plan: {RESET}{costo}")
+
+        return costo
+
+
 
     def plotearTablero(self):
 

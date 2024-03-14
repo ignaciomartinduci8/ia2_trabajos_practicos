@@ -139,6 +139,8 @@ class Tablero:
 
         print(f"{GREEN}Recorrido finalizado{RESET}")
 
+
+
     def plotearTablero(self):
 
         plt.figure(figsize=(9, 15))

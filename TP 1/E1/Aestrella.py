@@ -68,6 +68,7 @@ class Aestrella:
 
         return self.camino
 
+
     def testObjetivo(self):
 
         if self.pactual in self.pfinalVecinosCoords:
