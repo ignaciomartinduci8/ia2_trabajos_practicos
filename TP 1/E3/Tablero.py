@@ -3,6 +3,7 @@ import random
 import matplotlib.pyplot as plt
 from Aestrella import Aestrella
 import time
+import copy
 import json
 import numpy as np
 
@@ -74,8 +75,11 @@ class Tablero:
 
         while True:
 
-            columna = random.randint(0, self.columnas - 1)
-            fila = random.randint(0, self.filas - 1)
+            #columna = random.randint(0, self.columnas - 1)
+            #fila = random.randint(0, self.filas - 1)
+
+            columna = 0
+            fila = 0
 
             if self.tablero[fila][columna].getTipo() == "pasillo":
                 self.agente = [fila, columna]
@@ -136,11 +140,13 @@ class Tablero:
         print(f"{GREEN}Camino encontrado. Imprimiendo camino.{RESET}")
         print(f"{GREEN}Camino: {RESET}{self.camino}")
 
-        for punto in self.camino:
+        self.plotearTablero()
+        print(f"{GREEN}Imprimiendo camino (presionar enter para mostrar siguiente){RESET}")
+        self.agente = self.camino[-1]
+        self.camino = []
+        input()
+        self.plotearTablero()
 
-            self.agente = punto
-            self.plotearTablero()
-            time.sleep(1)
 
         print(f"{GREEN}Recorrido finalizado{RESET}")
 
@@ -174,7 +180,12 @@ class Tablero:
 
     def tomarPedido(self, pedido):
 
-        pedido = int(pedido)
+        try:
+            pedido = int(pedido)
+
+        except ValueError:
+            print(f"{RED}El pedido debe ser un número entero{RESET}")
+            return
 
         with open("./data/pedidos.json", "r") as file:
             datos = json.load(file)
@@ -197,44 +208,63 @@ class Tablero:
 
     def reordenarPedido(self):
 
+        self.coordsObj = []
+        self.plotearTablero()
+
         T0 = 50 # No mejoró por subirla
-        Tf = 0.001 # No mejoró por disminuir
+        Tf = 0.1 # No mejoró por disminuir
         alpha = 0.90 # 0.9 es la mejor relacion costo-tiempo
         T = T0
         L = 15 # 15 es la mejor relación costo-tiempo. Probar L=10 o L=5 da costos mayores, L=20 es muy costoso en tiempo
 
-        costo_actual = self.costoPlan()
+        costo_actual, caminos = self.costoPlan()
+
+        estados_analizados = set()
 
         while Tf <= T:
 
             for i in range(1, L):
 
-                pedido_mejor = self.pedido.copy()
+                estados_analizados.add(tuple(self.pedido.copy()))
+
+                pedido_actual = copy.deepcopy(self.pedido)
                 random.shuffle(self.pedido)
 
-                costo_nuevo = self.costoPlan()
+                costo_nuevo, caminos = self.costoPlan()
 
                 delta = costo_nuevo - costo_actual
 
+                if tuple(self.pedido.copy()) in estados_analizados:
+                    continue
+
                 if delta < 0:
 
-                    print("mejor")
-                    self.pedido = pedido_mejor
+                    pedido_actual = self.pedido
                     costo_actual = costo_nuevo
 
                 elif random.random() <= np.exp(-delta/T):
 
-                    print("random")
-                    self.pedido = pedido_mejor
+                    pedido_actual = self.pedido
                     costo_actual = costo_nuevo
 
             T = alpha * T
 
-        pass
+        self.pedido = pedido_actual
 
         print(f"{GREEN}Pedido exitosamente optimizado{RESET}")
         print(f"{GREEN}Plan: {RESET}{self.pedido}")
         print(f"{GREEN}Costo del plan: {RESET}{costo_actual}")
+        print(f"{GREEN}Imprimiendo caminos...{RESET}")
+
+        for i in range(len(caminos)):
+
+            self.camino = caminos[i]
+            self.plotearTablero()
+            self.agente = self.camino[-1]
+            input("(Enter)")
+
+        self.camino = []
+        self.plotearTablero()
 
     def costoPlan(self):
 
@@ -243,6 +273,8 @@ class Tablero:
         actual = self.agente
         objetivo_actual = None
 
+        caminos = []
+
         for i in range(self.filas):
             for j in range(self.columnas):
                 if self.tablero[i][j].getAlias() == self.pedido[0]:
@@ -250,10 +282,12 @@ class Tablero:
 
         a_estrella = Aestrella(actual, objetivo_actual, self.tablero)
         costo += a_estrella.getCosto()
+        caminos.append(a_estrella.getCamino())
+        print(f"Ir desde {actual} hasta {caminos[-1][-1]} cuesta {a_estrella.getCosto()}")
 
         for i in range(len(self.pedido)):
 
-            actual = objetivo_actual
+            actual = caminos[-1][-1]
             objetivo_actual = None
 
             for j in range(self.filas):
@@ -263,13 +297,13 @@ class Tablero:
 
             a_estrella = Aestrella(actual, objetivo_actual, self.tablero)
             costo += a_estrella.getCosto()
+            caminos.append(a_estrella.getCamino())
+            print(f"Ir desde {actual} hasta {caminos[-1][-1]} cuesta {a_estrella.getCosto()}")
 
         print(f"Plan: {self.pedido}")
         print(f"{GREEN}Calculo del costo del plan: {RESET}{costo}")
 
-        return costo
-
-
+        return [costo, caminos]
 
     def plotearTablero(self):
 

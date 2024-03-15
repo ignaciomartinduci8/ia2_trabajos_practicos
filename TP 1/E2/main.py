@@ -6,8 +6,6 @@ RESET = "\033[0;0m"
 
 def main():
 
-    #NOTA DE USO: No sobrecargar las impresiones de pantalla (plots) porque se saturará el canal HTTP.
-
     print("Inicianado el programa...")
 
     tablero = Tablero()
@@ -20,7 +18,6 @@ def main():
         print("[1] Generar objetivo aleatorio")
         print("[2] Ingresar objetivo manualmente")
         print("[3] Recorrer")
-        print("[4] Tomar pedido")
 
         option = input("Ingrese una opción: ")
         print("====================================")
@@ -36,16 +33,13 @@ def main():
             tablero.objetivoAleatorio()
 
         elif option == 2:
-            obj = int(input("Ingrese el alias del punto objetivo: "))
+            objA = int(input("Ingrese el alias del primer objetivo: "))
+            objB = int(input("Ingrese el alias del segundo objetivo: "))
 
-            tablero.objetivoManual(obj)
+            tablero.objetivoManual(objA, objB)
 
         elif option == 3:
             tablero.recorrer()
-
-        elif option == 4:
-            pedido = input("Ingrese el numero del pedido: ")
-            tablero.tomarPedido(pedido)
 
         else:
             print("Opción no válida")

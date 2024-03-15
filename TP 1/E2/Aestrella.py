@@ -2,12 +2,13 @@
 
 class Aestrella:
 
-    def __init__(self, pinicial, pfinal, tablero):
+    def __init__(self, pinicial, pfinal, tablero, restricciones=[]):
 
         self.pinicial = pinicial
         self.pactual = pinicial
         self.pfinal = pfinal
         self.tablero = tablero
+        self.restricciones = restricciones
         self.pfinalVecinosCoords = [vecino.getCoords() for vecino in tablero[pfinal[0]][pfinal[1]].getVecinos()]
         self.camino = []
         self.encontrarCamino()
@@ -17,10 +18,6 @@ class Aestrella:
         visitados = [{"punto": self.pinicial, "padre": None}]
 
         pila_explorar = []
-
-        if self.pactual in self.pfinalVecinosCoords:
-            self.camino.append(self.pactual)
-            return
 
         while not self.testObjetivo():
 
@@ -32,6 +29,9 @@ class Aestrella:
                     continue
 
                 if vecino.getCoords() in [visitado["punto"] for visitado in visitados]:
+                    continue
+
+                if vecino.getCoords() in self.restricciones:
                     continue
 
                 else:
@@ -72,9 +72,6 @@ class Aestrella:
 
         return self.camino
 
-    def getCosto(self):
-
-        return len(self.camino) - 1
 
     def testObjetivo(self):
 
