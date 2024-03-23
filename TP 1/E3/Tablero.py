@@ -161,14 +161,23 @@ class Tablero:
         allPedidos = []
         pedidos = []
 
+        counter = 0
+
         for line in datos.split("\n"):
 
             if "Order" in line:
 
+                counter = 0
                 numero_orden = int(line.replace("Order ", ""))
                 pedidos = []
 
+            elif counter >= 16:
+
+                allPedidos.append({"orden": numero_orden, "pedidos": pedidos})
+
             elif "P" in line:
+
+                counter += 1
 
                 pedidos.append(int(line.replace("P", "")))
 
@@ -213,58 +222,72 @@ class Tablero:
 
         T0 = 50 # No mejoró por subirla
         Tf = 0.1 # No mejoró por disminuir
-        alpha = 0.90 # 0.9 es la mejor relacion costo-tiempo
+        alpha = 0.95 # 0.9 es la mejor relacion costo-tiempo
         T = T0
-        L = 15 # 15 es la mejor relación costo-tiempo. Probar L=10 o L=5 da costos mayores, L=20 es muy costoso en tiempo
+        L = 50 # 15 es la mejor relación costo-tiempo. Probar L=10 o L=5 da costos mayores, L=20 es muy costoso en tiempo
 
         costo_actual, caminos = self.costoPlan()
 
-        estados_analizados = set()
+        mejor_orden = copy.deepcopy(self.pedido)
+        mejores_caminos = copy.deepcopy(caminos)
+
+        counter = 0
 
         while Tf <= T:
 
             for i in range(1, L):
 
-                estados_analizados.add(tuple(self.pedido.copy()))
+                counter += 1
 
-                pedido_actual = copy.deepcopy(self.pedido)
                 random.shuffle(self.pedido)
 
                 costo_nuevo, caminos = self.costoPlan()
 
                 delta = costo_nuevo - costo_actual
 
-                if tuple(self.pedido.copy()) in estados_analizados:
-                    continue
-
                 if delta < 0:
 
-                    pedido_actual = self.pedido
+                    mejor_orden = copy.deepcopy(self.pedido)
+                    mejores_caminos = copy.deepcopy(caminos)
                     costo_actual = costo_nuevo
 
                 elif random.random() <= np.exp(-delta/T):
 
-                    pedido_actual = self.pedido
+                    mejor_orden = copy.deepcopy(self.pedido)
+                    mejores_caminos = copy.deepcopy(caminos)
                     costo_actual = costo_nuevo
 
             T = alpha * T
 
-        self.pedido = pedido_actual
+        self.pedido = copy.deepcopy(mejor_orden)
 
-        print(f"{GREEN}Pedido exitosamente optimizado{RESET}")
+        print(f"=====================================================")
+        print(f"{GREEN}Pedido exitosamente optimizado luego de {RESET}{counter}{GREEN} iteraciones.{RESET}")
         print(f"{GREEN}Plan: {RESET}{self.pedido}")
         print(f"{GREEN}Costo del plan: {RESET}{costo_actual}")
         print(f"{GREEN}Imprimiendo caminos...{RESET}")
 
         for i in range(len(caminos)):
 
-            self.camino = caminos[i]
+            self.camino = mejores_caminos[i]
             self.plotearTablero()
-            self.agente = self.camino[-1]
             input("(Enter)")
+            self.agente = self.camino[-1]
+            self.camino = []
+            self.plotearTablero()
 
         self.camino = []
         self.plotearTablero()
+
+    def reordenarTablero(self):
+
+
+
+        pass
+
+    def calcularFrecuencias(self):
+
+        pass
 
     def costoPlan(self):
 
@@ -283,9 +306,11 @@ class Tablero:
         a_estrella = Aestrella(actual, objetivo_actual, self.tablero)
         costo += a_estrella.getCosto()
         caminos.append(a_estrella.getCamino())
-        print(f"Ir desde {actual} hasta {caminos[-1][-1]} cuesta {a_estrella.getCosto()}")
 
         for i in range(len(self.pedido)):
+
+            if i == 0:
+                continue
 
             actual = caminos[-1][-1]
             objetivo_actual = None
@@ -298,10 +323,9 @@ class Tablero:
             a_estrella = Aestrella(actual, objetivo_actual, self.tablero)
             costo += a_estrella.getCosto()
             caminos.append(a_estrella.getCamino())
-            print(f"Ir desde {actual} hasta {caminos[-1][-1]} cuesta {a_estrella.getCosto()}")
 
-        print(f"Plan: {self.pedido}")
-        print(f"{GREEN}Calculo del costo del plan: {RESET}{costo}")
+        #print(f"{GREEN}--> Plan a evaluar: {RESET}{self.pedido}")
+        #print(f"{GREEN}--> Calculo del costo del plan: {RESET}{costo}")
 
         return [costo, caminos]
 
