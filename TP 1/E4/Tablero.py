@@ -160,6 +160,7 @@ class Tablero:
 
         allPedidos = []
         pedidos = []
+        frecuencias = {}
 
         counter = 0
 
@@ -183,8 +184,16 @@ class Tablero:
 
                 pedidos.append(int(line.replace("P", "")))
 
+                if int(line.replace("P", "")) in frecuencias:
+                    frecuencias[int(line.replace("P", ""))] += 1
+                else:
+                    frecuencias[int(line.replace("P", ""))] = 1
+
         with open("./data/pedidos.json", "w") as file:
             json.dump(allPedidos, file)
+
+        with open("./data/frecuencias.json", "w") as file:
+            json.dump(frecuencias, file)
 
     def tomarPedido(self, pedido):
 
@@ -289,7 +298,20 @@ class Tablero:
 
         pass
 
-    def calcularFrecuencias(self):
+    def reordenarTablero(self):
+
+        genoma = []
+
+        for fila in self.tablero:
+            for casillero in fila:
+
+                if casillero.getTipo() == "estante":
+                    genoma.append(casillero.getAlias())
+
+        print(f"{GREEN}Genoma original: {RESET}{genoma}")
+
+
+    def calcularAceptacion(self):
 
         pass
 
