@@ -192,7 +192,15 @@ class Tablero:
 
             if self.caminoA:
 
-                if self.caminoA[0] == self.agenteB:
+                if self.caminoA[0] == self.agenteB and self.agenteB in self.vecinosObjB:
+
+                    print(f"{RED}Solicitando al agenteB liberar el espacio...{RESET}")
+
+                    for vecino in self.tablero[self.agenteB[0]][self.agenteB[1]].getVecinos():
+                        if vecino.getTipo() == "pasillo" and self.agenteA != vecino.getCoords():
+                            self.caminoB.append(vecino.getCoords())
+
+                elif self.caminoA[0] == self.agenteB:
 
                     print(f"{RED}Colisión detectada{RESET}")
 
@@ -201,9 +209,11 @@ class Tablero:
                     print(f"{GREEN}Camino reculado para A.{RESET}")
                     print(f"{GREEN}Camino A: {RESET}{self.caminoA}")
 
-                self.agenteA = self.caminoA.pop(0)
-                self.plotearTablero()
-                time.sleep(2)
+                else:
+
+                    self.agenteA = self.caminoA.pop(0)
+                    self.plotearTablero()
+                    time.sleep(2)
 
             if self.caminoB:
 
