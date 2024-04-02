@@ -1,3 +1,5 @@
+import math
+
 from Casillero import Casillero
 import random
 import matplotlib.pyplot as plt
@@ -6,6 +8,7 @@ import time
 import copy
 import json
 import numpy as np
+import math
 
 RED = "\033[1;31m"
 GREEN = "\033[0;32m"
@@ -19,6 +22,8 @@ class Tablero:
 
         self.filas = 21
         self.columnas = 13
+        self.orderLimit = 8
+        self.pedidoLimit = 16
 
         self.coordsObj = []
 
@@ -35,13 +40,18 @@ class Tablero:
 
     def generarTablero(self):
 
-        c = 1
+        c = 0
 
         # Algoritmo de generación de tablero
 
         for i in range(self.filas):
             fila = []
             for j in range(self.columnas):
+
+                if i == 0 and j == 0:
+
+                    fila.append(Casillero("pasillo", "HOME", i, j))
+                    continue
 
                 if i == 0 or i == 5 or i == 10 or i == 15 or i == 20 or j == 0 or j == 3 or j == 6 or j == 9 or j == 12:
                     fila.append(Casillero("pasillo", None, i, j))
@@ -166,6 +176,9 @@ class Tablero:
 
         for line in datos.split("\n"):
 
+            if "Order" in line and int(line.replace("Order ", "")) > self.orderLimit:
+                break
+
             if "Order" in line:
 
                 counter = 0
@@ -175,7 +188,7 @@ class Tablero:
             elif line == "\n" or line == "" or line == " " or line == " \n":
                 allPedidos.append({"orden": numero_orden, "pedidos": pedidos})
 
-            elif counter >= 16:
+            elif counter >= self.pedidoLimit:
                 continue
 
             elif "P" in line:
@@ -188,6 +201,8 @@ class Tablero:
                     frecuencias[int(line.replace("P", ""))] += 1
                 else:
                     frecuencias[int(line.replace("P", ""))] = 1
+
+        frecuencias = {k: v for k, v in sorted(frecuencias.items(), key=lambda item: item[1], reverse=True)}
 
         with open("./data/pedidos.json", "w") as file:
             json.dump(allPedidos, file)
@@ -223,16 +238,18 @@ class Tablero:
 
         pass
 
-    def reordenarPedido(self):
+    def reordenarPedido(self, printMessage=True):
 
         self.coordsObj = []
-        self.plotearTablero()
+
+        if printMessage:
+            self.plotearTablero()
 
         T0 = 50 # No mejoró por subirla
         Tf = 0.1 # No mejoró por disminuir
-        alpha = 0.90 # 0.9 es la mejor relacion costo-tiempo
+        alpha = 0.75 # 0.75 es la mejor relacion costo-tiempo
         T = T0
-        L = 15 # 15 es la mejor relación costo-tiempo. Probar L=10 o L=5 da costos mayores, L=20 es muy costoso en tiempo
+        L = 5 # 30 es la mejor relación costo-tiempo. Probar L=10 o L=5 da costos mayores, L=20 es muy costoso en tiempo
 
         start_time = time.time()
 
@@ -273,32 +290,31 @@ class Tablero:
 
         end_time = time.time()
 
-        print(f"=====================================================")
-        print(f"{GREEN}Pedido exitosamente optimizado luego de {RESET}{counter}{GREEN} iteraciones.{RESET}")
-        print(f"{GREEN}Plan: {RESET}{self.pedido}")
-        print(f"{GREEN}Costo del plan: {RESET}{costo_actual}")
-        print(f"{GREEN}Tiempo de ejecución: {RESET}{end_time - start_time}")
-        print(f"{GREEN}Imprimiendo caminos...{RESET}")
+        if printMessage:
 
-        for i in range(len(caminos)):
+            print(f"=====================================================")
+            print(f"{GREEN}Pedido exitosamente optimizado luego de {RESET}{counter}{GREEN} iteraciones.{RESET}")
+            print(f"{GREEN}Plan: {RESET}{self.pedido}")
+            print(f"{GREEN}Costo del plan: {RESET}{costo_actual}")
+            print(f"{GREEN}Tiempo de ejecución: {RESET}{end_time - start_time}")
+            print(f"{GREEN}Imprimiendo caminos...{RESET}")
 
-            self.camino = mejores_caminos[i]
-            self.plotearTablero()
-            input("(Enter)")
-            self.agente = self.camino[-1]
+            for i in range(len(caminos)):
+                self.camino = mejores_caminos[i]
+                self.plotearTablero()
+                input("(Enter)")
+                self.agente = self.camino[-1]
+                self.camino = []
+                self.plotearTablero()
+
             self.camino = []
             self.plotearTablero()
 
-        self.camino = []
-        self.plotearTablero()
+        return costo_actual
 
     def reordenarTablero(self):
 
-
-
-        pass
-
-    def reordenarTablero(self):
+        N = 6
 
         genoma = []
 
@@ -310,10 +326,229 @@ class Tablero:
 
         print(f"{GREEN}Genoma original: {RESET}{genoma}")
 
+        genotipos = []
 
-    def calcularAceptacion(self):
+        for i in range(N):
 
-        pass
+            gen = copy.deepcopy(genoma)
+            random.shuffle(gen)
+            genotipos.append(gen)
+
+        print(f"{GREEN}Poblacion original generada:{RESET}")
+
+        for gen in genotipos:
+            print(gen)
+
+        fitness_vec = self.fitness(genotipos)
+
+        print(f"{GREEN}Fitness de la población original generada:{RESET} {fitness_vec}")
+
+        start_time = time.time()
+
+        nuevos_genotipos = [[] for i in range(N)]
+
+        for i in range(10):
+
+            print(f"{GREEN}Iteración {RESET}{i+1}")
+
+            actual_time = time.time()
+
+            if actual_time - start_time > 1200:
+
+                print(f"{RED}Tiempo de ejecución excedido{RESET}")
+
+                self.reasignarEstantes(genotipos[0])
+                self.plotearTablero()
+
+                break
+
+            genotipos = [x for _, x in sorted(zip(fitness_vec, genotipos), key=lambda pair: pair[0])]
+
+            elite_size = math.ceil(0.3333 * N)
+
+            for j in range(elite_size):  # un 33.333% de la población se considera "ELITE"
+
+                nuevos_genotipos[j] = copy.deepcopy(genotipos[j])
+
+            for j in range(0, N-elite_size):
+
+                hijo1, hijo2 = self.PMX(genotipos[j], genotipos[j+1])
+
+                hijo1 = self.intercambio(hijo1)
+                hijo2 = self.intercambio(hijo2)
+                hijo1 = self.insercion(hijo1)
+                hijo2 = self.insercion(hijo2)
+
+                nuevos_genotipos[j+elite_size-1] = hijo1
+                nuevos_genotipos[j+elite_size] = hijo2
+
+            genotipos = copy.deepcopy(nuevos_genotipos)
+
+            fitness_vec = self.fitness(genotipos)
+
+            print(f"{GREEN}Fitness de la población generada en la iteración {i}:{RESET} {fitness_vec}")
+
+
+        print(f"=====================================================")
+        print(f"{GREEN}Optimización finalizada{RESET}")
+        print(f"{GREEN}Tiempo de ejecución: {RESET}{time.time() - start_time}")
+        print(f"{GREEN}Genotipo final: {RESET}{genotipos[0]}")
+
+        self.reasignarEstantes(genotipos[0])
+
+        self.plotearTablero()
+
+    def PMX(self, padre1, padre2):
+
+        print(f"{GREEN}Padre 1: {RESET}{padre1}")
+        print(f"{GREEN}Padre 2: {RESET}{padre2}")
+
+        corte1 = random.randint(0, len(padre1) - 1)
+        corte2 = random.randint(corte1, len(padre1) - 1)
+
+        if corte1 == corte2:
+            corte2 += 1
+
+        if corte2 < corte1:
+            corte1, corte2 = corte2, corte1
+
+        size = len(padre1)
+
+        hijo1 = [None for _ in range(size)]
+        hijo2 = [None for _ in range(size)]
+
+        hijo1[corte1:corte2] = padre2[corte1:corte2]
+        hijo2[corte1:corte2] = padre1[corte1:corte2]
+
+        padre1_cross = copy.deepcopy(padre1)
+        padre2_cross = copy.deepcopy(padre2)
+        padre1_cross[corte1:corte2] = padre2[corte1:corte2]
+        padre2_cross[corte1:corte2] = padre1[corte1:corte2]
+
+        for i in range(size):
+
+            if i in range(corte1, corte2):
+                continue
+
+            if padre1[i] not in hijo1:
+
+                hijo1[i] = padre1[i]
+
+                continue
+
+            val = padre1[i]
+
+            while True:
+
+                idx = hijo1.index(val)
+
+                val = padre2_cross[idx]
+
+                if val in hijo1:
+                    continue
+
+                hijo1[i] = val
+                break
+
+        for i in range(size):
+
+            if i in range(corte1, corte2):
+                continue
+
+            if padre2[i] not in hijo2:
+
+                hijo2[i] = padre2[i]
+
+                continue
+
+            val = padre2[i]
+
+            while True:
+
+                idx = hijo2.index(val)
+
+                val = padre1_cross[idx]
+
+                if val in hijo2:
+                    continue
+
+                hijo2[i] = val
+                break
+
+        print(f"{GREEN}Hijo 1: {RESET}{hijo1}")
+        print(f"{GREEN}Hijo 2: {RESET}{hijo2}")
+
+        return hijo1, hijo2
+
+    def intercambio(self, hijo):
+
+        idx1 = random.randint(0, len(hijo) - 1)
+        idx2 = random.randint(0, len(hijo) - 1)
+
+        hijo[idx1], hijo[idx2] = hijo[idx2], hijo[idx1]
+
+        return hijo
+
+    def insercion(self, hijo):
+
+        idx1 = random.randint(0, len(hijo) - 1)
+        idx2 = random.randint(0, len(hijo) - 1)
+
+        if idx1 == idx2:
+            return hijo
+
+        if idx1 > idx2:
+            idx1, idx2 = idx2, idx1
+
+        subsec = hijo[idx1:idx2+1]
+
+        newsec = [subsec[0], subsec[-1], *subsec[1:-1]]
+
+        hijo = [*hijo[:idx1], *newsec, *hijo[idx2+1:]]
+
+        return hijo
+
+    def fitness(self, genotipos):
+
+        fitness_vec = []
+
+        for genotipo in genotipos:
+
+            print(f"{GREEN}--> Evaluando genotipo: {RESET}{genotipo}")
+
+            self.reasignarEstantes(genotipo)
+
+            costo_dist = 0
+
+            with open("./data/pedidos.json", "r") as file:
+                datos = json.load(file)
+
+            for orden in datos:
+
+                self.pedido = orden["pedidos"]
+
+                costo_dist += self.reordenarPedido(printMessage=False)
+
+            fitness_vec.append(costo_dist)
+            print(f"{GREEN}--> Costo del genotipo: {RESET}{costo_dist}")
+
+        fit_max = max(fitness_vec)
+        fit_sum = sum(fitness_vec)
+
+        for i in range(len(fitness_vec)):
+
+            fitness_vec[i] = 1 - (fitness_vec[i] / fit_max)
+
+        return fitness_vec
+
+    def reasignarEstantes(self, genotipo):
+
+        data = copy.deepcopy(genotipo)
+
+        for i in range(self.filas):
+            for j in range(self.columnas):
+                if self.tablero[i][j].getTipo() == "estante":
+                    self.tablero[i][j].setAlias(data.pop(0))
 
     def costoPlan(self):
 
@@ -329,6 +564,9 @@ class Tablero:
                 if self.tablero[i][j].getAlias() == self.pedido[0]:
                     objetivo_actual = [i, j]
 
+        if not objetivo_actual:
+            print(f"{RED}A* - 1 - Error en la asignación de objetivos{RESET}")
+            return
         a_estrella = Aestrella(actual, objetivo_actual, self.tablero)
         costo += a_estrella.getCosto()
         caminos.append(a_estrella.getCamino())
@@ -346,12 +584,26 @@ class Tablero:
                     if self.tablero[j][k].getAlias() == self.pedido[i]:
                         objetivo_actual = [j, k]
 
+            if not objetivo_actual:
+                print(f"{RED}A* - 2 - Error en la asignación de objetivos{RESET}")
+                return
             a_estrella = Aestrella(actual, objetivo_actual, self.tablero)
             costo += a_estrella.getCosto()
             caminos.append(a_estrella.getCamino())
 
         #print(f"{GREEN}--> Plan a evaluar: {RESET}{self.pedido}")
         #print(f"{GREEN}--> Calculo del costo del plan: {RESET}{costo}")
+
+        actual = caminos[-1][-1]
+        objetivo_actual = [0, 0]
+
+        if not objetivo_actual:
+            print(f"{RED}A* - 3 - Error en la asignación de objetivos{RESET}")
+            return
+        a_estrella = Aestrella(actual, objetivo_actual, self.tablero)
+
+        costo += a_estrella.getCosto()
+        caminos.append(a_estrella.getCamino())
 
         return [costo, caminos]
 

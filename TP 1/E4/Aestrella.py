@@ -78,7 +78,10 @@ class Aestrella:
 
     def testObjetivo(self):
 
-        if self.pactual in self.pfinalVecinosCoords:
+        if self.pfinal == [0, 0] and self.pactual == [0, 0]:
+            return True
+
+        if self.pactual in self.pfinalVecinosCoords and self.pfinal != [0, 0]:
             return True
 
         return False

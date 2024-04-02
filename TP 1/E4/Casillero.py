@@ -25,3 +25,6 @@ class Casillero:
     def getTipo(self):
         return self.tipo
 
+    def setAlias(self, alias):
+        self.alias = alias
+
