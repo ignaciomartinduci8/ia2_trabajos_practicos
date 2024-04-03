@@ -22,7 +22,7 @@ class Tablero:
 
         self.filas = 21
         self.columnas = 13
-        self.orderLimit = 8
+        self.orderLimit = 1
         self.pedidoLimit = 16
 
         self.coordsObj = []
@@ -245,11 +245,11 @@ class Tablero:
         if printMessage:
             self.plotearTablero()
 
-        T0 = 50 # No mejoró por subirla
-        Tf = 0.1 # No mejoró por disminuir
+        T0 = 50 # No mejoró por subirla de 50
+        Tf = 0.1 # No mejoró por disminuir de 0.1
         alpha = 0.75 # 0.75 es la mejor relacion costo-tiempo
         T = T0
-        L = 5 # 30 es la mejor relación costo-tiempo. Probar L=10 o L=5 da costos mayores, L=20 es muy costoso en tiempo
+        L = 5 # 10 es la mejor relación costo-tiempo. Probar L=10 o L=5 da costos mayores, L=20 es muy costoso en tiempo
 
         start_time = time.time()
 
@@ -315,6 +315,8 @@ class Tablero:
     def reordenarTablero(self):
 
         N = 6
+        gens = 29 # +1
+        start = time.time()
 
         genoma = []
 
@@ -343,24 +345,13 @@ class Tablero:
 
         print(f"{GREEN}Fitness de la población original generada:{RESET} {fitness_vec}")
 
-        start_time = time.time()
-
         nuevos_genotipos = [[] for i in range(N)]
 
-        for i in range(10):
+        for i in range(gens):
 
             print(f"{GREEN}Iteración {RESET}{i+1}")
 
-            actual_time = time.time()
-
-            if actual_time - start_time > 1200:
-
-                print(f"{RED}Tiempo de ejecución excedido{RESET}")
-
-                self.reasignarEstantes(genotipos[0])
-                self.plotearTablero()
-
-                break
+            actual = time.time()
 
             genotipos = [x for _, x in sorted(zip(fitness_vec, genotipos), key=lambda pair: pair[0])]
 
@@ -379,6 +370,7 @@ class Tablero:
                 hijo1 = self.insercion(hijo1)
                 hijo2 = self.insercion(hijo2)
 
+
                 nuevos_genotipos[j+elite_size-1] = hijo1
                 nuevos_genotipos[j+elite_size] = hijo2
 
@@ -388,10 +380,9 @@ class Tablero:
 
             print(f"{GREEN}Fitness de la población generada en la iteración {i}:{RESET} {fitness_vec}")
 
-
         print(f"=====================================================")
         print(f"{GREEN}Optimización finalizada{RESET}")
-        print(f"{GREEN}Tiempo de ejecución: {RESET}{time.time() - start_time}")
+        print(f"{GREEN}Tiempo de ejecución: {RESET}{time.time() - start}")
         print(f"{GREEN}Genotipo final: {RESET}{genotipos[0]}")
 
         self.reasignarEstantes(genotipos[0])

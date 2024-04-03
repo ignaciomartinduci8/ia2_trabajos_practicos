@@ -219,11 +219,12 @@ class Tablero:
         self.coordsObj = []
         self.plotearTablero()
 
-        T0 = 50 # No mejoró por subirla
-        Tf = 0.1 # No mejoró por disminuir
-        alpha = 0.90 # 0.9 es la mejor relacion costo-tiempo
+        T0 = 50 # No mejoró por subirla de 50
+        Tf = 0.1 # No mejoró por disminuir de 0.1
+        alpha = 0.95 # 0.95 es la mejor relacion costo-tiempo
         T = T0
-        L = 15 # 15 es la mejor relación costo-tiempo. Probar L=10 o L=5 da costos mayores, L=20 es muy costoso en tiempo
+        L = 35 # 35 es la mejor relación costo-tiempo.
+            # Probar L=10 o L=5 da costos mayores, L=50 es muy costoso en tiempo
 
         start_time = time.time()
 
@@ -282,16 +283,6 @@ class Tablero:
 
         self.camino = []
         self.plotearTablero()
-
-    def reordenarTablero(self):
-
-
-
-        pass
-
-    def calcularFrecuencias(self):
-
-        pass
 
     def costoPlan(self):
 
