@@ -1,7 +1,7 @@
 
 class Motor:
 
-    def inference(self, NOCHE, DIA, ZP, ZZ, ZN, ZCALP, ZCALZ,ZCALN, ZENFP, ZENFZ, ZENFN, TPRED_ALTA, TPRED_BAJA):
+    def inference(self, NOCHE, DIA, ZN, ZZ, ZP, ZCALN, ZCALZ,ZCALP, ZENFN, ZENFZ, ZENFP, TPRED_BAJA, TPRED_ALTA):
 
         cerrar1 = min(DIA, ZP)
         centro1 = min(DIA, ZZ)

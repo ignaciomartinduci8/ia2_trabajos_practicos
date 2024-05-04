@@ -23,10 +23,10 @@ class CLI(Cmd):
 
     ###################################################
 
-    def do_evaluateCase(self, args):
+    def do_caso(self, args):
         """
         Descripción: Iniciar control de caso especial
-        Sintaxis: evaluateCase
+        Sintaxis: caso
         """
 
         if not self.controller:
@@ -39,15 +39,28 @@ class CLI(Cmd):
 
         self.controller = None
 
-    def do_genYear(self, args):
+    def do_controlar(self, args):
+        """
+        Descripción: Iniciar control continuo
+        Sintaxis: controlar
+        """
+
+        self.controller = Controller()
+
+        print(f"{IDENTATION}{GREEN}Iniciando control continuo...{RESET}")
+        self.controller.control()
+
+        self.controller = None
+
+    def do_genYears(self, args):
         """
         Descripción: Generar un año de datos
         Sintaxis: genAño
         """
 
-        print(f"{IDENTATION}{GREEN}Ingrese el año a generar desde la base de datos: {RESET}")
+        print(f"{IDENTATION}{GREEN}Generando datos desde .txt a .json...{RESET}")
 
-        self.DataGen = DataGen(int(input()))
+        self.DataGen = DataGen()
         self.DataGen = None
 
     ##################################################

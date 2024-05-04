@@ -4,137 +4,155 @@ import matplotlib.pyplot as plt
 
 class DataGen:
 
-    def __init__(self, year):
-        self.year = int(year)
-        self.checkExistence()
-
-    def checkExistence(self):
-        with open("data/yearData.json", "r") as file:
-            data = json.load(file)
-
-        if self.year < 1991 or self.year > 2023:
-            print(f"El año {self.year} no es válido.")
-            return
-
-        for elemento in data:
-            if elemento["year"] == self.year:
-                print(f"El año {self.year} ya existe en la base de datos.")
-                return
-
+    def __init__(self):
+        self.year = None
         self.genYear()
 
     def genYear(self):
 
-        with open("data/bsas_st_temp.txt", "r") as file:
-            data = file.readlines()
+        counter = 0
 
-        data_clean = [[] for i in range(len(data))]
+        for i in range(1991, 2023+1):
 
-        for i in range(len(data)):
-            data[i] = data[i].split()
+            self.year = i
 
-        idx = (self.year - 1991)*3
+            with open("data/bsas_st_temp.txt", "r") as file:
+                data = file.readlines()
 
-        for i in range(len(data)):
+            data_clean = [[] for i in range(len(data))]
 
-            for j in range(len(data[i])):
+            for i in range(len(data)):
+                data[i] = data[i].split()
 
-                if j < idx or j > idx + 2:
-                    continue
+            idx = (self.year - 1991) * 3
 
-                else:
+            for i in range(len(data)):
 
-                    if i < 2 or i > 9:
-                        data_clean[i].append(round(float(data[i][j].replace(',', '.')), 2) + 10)  # exageracion
-                    elif 4 < i < 8:
-                        data_clean[i].append(round(float(data[i][j].replace(',', '.')), 2) - 10)  # exageracion
+                for j in range(len(data[i])):
+
+                    if j < idx or j > idx + 2:
+                        continue
 
                     else:
-                        data_clean[i].append(round(float(data[i][j].replace(',', '.')), 2))
 
-        data_hourly = [None for _ in range(12*30*24)]
+                        if i < 2 or i > 9:
+                            data_clean[i].append(round(float(data[i][j].replace(',', '.')), 2) + 10)  # exageracion
+                        elif 4 < i < 8:
+                            data_clean[i].append(round(float(data[i][j].replace(',', '.')), 2) - 10)  # exageracion
 
-        for i in range(12):
-            for j in range(30):
+                        else:
+                            data_clean[i].append(round(float(data[i][j].replace(',', '.')), 2))
 
-                min_distorted = data_clean[i][2] + random.choice([-6, 6])
-                max_distorted = data_clean[i][1] + random.choice([-6, 6])
-                mean_distorted = data_clean[i][0] + random.choice([-6, 6])
+            data_hourly = [None for _ in range(12 * 30 * 24)]
 
-                for k in range(24):
+            for i in range(12):
+                for j in range(30):
 
-                    index = i*30*24 + j*24 + k
+                    for k in range(24):
 
-                    data_hourly[index] = random.uniform(min_distorted, max_distorted)
+                        index = i * 30 * 24 + j * 24 + k
 
-        data_json = {
-            "year": self.year
-        }
+                        hora_pico = random.choice([13,14,15,16])
 
-        for i in range(12*30):
-            data_daily = []
-            for j in range(24):
-                data_daily.append(data_hourly[i*24 + j])
+                        if 0 <= k <= hora_pico:
+                            data_hourly[index] = data_clean[i][2]-7 + k * (data_clean[i][1]-data_clean[i][2]+7)/hora_pico
 
-            data_json[f"day_{i+1}"] = data_daily
+                        if hora_pico < k <= 23:
+                            data_hourly[index] = data_clean[i][1] + (k-hora_pico) * (data_clean[i][2]-7-data_clean[i][1])/(24-hora_pico)
 
-        with open("data/yearData.json", "r") as file:
-            data_actual_json = json.load(file)
+            data_json = {
+                "year": self.year
+            }
 
-        with open("data/yearData.json", "w") as file:
-            data_final = data_actual_json.append(data_json)
-            json.dump(data_actual_json, file)
+            for i in range(12 * 30):
+                data_daily = []
+                for j in range(24):
+                    data_daily.append(data_hourly[i * 24 + j])
 
-        print(f"Año {self.year} generado con éxito.")
+                data_json[f"day_{i + 1}"] = data_daily
 
-        daily_mins = []
-        daily_maxs = []
-        daily_means = []
+            with open("data/yearData.json", "r") as file:
+                data_actual_json = json.load(file)
 
-        days = []
+            with open("data/yearData.json", "w") as file:
+                data_final = data_actual_json.append(data_json)
+                json.dump(data_actual_json, file)
 
-        for i in range(12*30):
-            days.append(i+1)
+            print(f"Año {self.year} generado con éxito.")
 
-        for i in range(12):
-            for j in range(30):
+            daily_mins = []
+            daily_maxs = []
+            daily_means = []
 
-                daily_sum = 0
-                daily_min = 100
-                daily_max = -100
+            days = []
 
-                for k in range(24):
+            for i in range(12 * 30):
+                days.append(i + 1)
 
-                    index = i*30*24 + j*24 + k
+            for i in range(12):
+                for j in range(30):
 
-                    daily_sum += data_hourly[index]
+                    daily_sum = 0
+                    daily_min = 100
+                    daily_max = -100
 
-                    if data_hourly[index] < daily_min:
-                        daily_min = data_hourly[index]
+                    for k in range(24):
 
-                    if data_hourly[index] > daily_max:
-                        daily_max = data_hourly[index]
+                        index = i * 30 * 24 + j * 24 + k
 
-                daily_mins.append(daily_min)
-                daily_maxs.append(daily_max)
-                daily_means.append(daily_sum / 24)
+                        daily_sum += data_hourly[index]
 
-        daily_mins_smooth = daily_mins[::20]
-        daily_maxs_smooth = daily_maxs[::20]
-        daily_means_smooth = daily_means[::20]
-        days_smooth = days[::20]
+                        if data_hourly[index] < daily_min:
+                            daily_min = data_hourly[index]
 
-        print(len(daily_mins_smooth))
+                        if data_hourly[index] > daily_max:
+                            daily_max = data_hourly[index]
 
-        plt.plot(days_smooth, daily_mins_smooth, label="Mínimas")
-        plt.plot(days_smooth, daily_maxs_smooth, label="Máximas")
-        plt.plot(days_smooth, daily_means_smooth, label="Promedios")
-        plt.legend()
-        plt.grid()
-        plt.xlabel("Días")
-        plt.ylabel("Temperatura")
-        plt.title(f"Temperaturas del año {self.year}")
-        plt.show()
+                    daily_mins.append(daily_min)
+                    daily_maxs.append(daily_max)
+                    daily_means.append(daily_sum / 24)
+
+            daily_mins_smooth = daily_mins[::20]
+            daily_maxs_smooth = daily_maxs[::20]
+            daily_means_smooth = daily_means[::20]
+            days_smooth = days[::20]
+
+            if (counter % 5) == 0:
+
+                plt.plot(days_smooth, daily_mins_smooth, label="Mínimas")
+                plt.plot(days_smooth, daily_maxs_smooth, label="Máximas")
+                plt.plot(days_smooth, daily_means_smooth, label="Promedios")
+                plt.legend()
+                plt.grid()
+                plt.xlabel("Días")
+                plt.ylabel("Temperatura")
+                plt.title(f"Temperaturas del año {self.year}")
+                plt.show()
+
+            if self.year == 2023:
+
+                for l in range(0,12):
+                    for j in range(0,30):
+                        for k in range(0,24):
+
+                            if l == 0 and j == 15 and k==0:
+
+                                plt.plot(range(24), data_hourly[l * 30 * 24 + j * 24: l * 30 * 24 + j * 24 + 24])
+                                plt.xlabel("Horas")
+                                plt.ylabel("Temperatura")
+                                plt.title(f"Temperaturas del día 15 del mes 1")
+                                plt.grid()
+                                plt.show()
+                            if l == 7 and j == 15 and k==0:
+
+                                plt.plot(range(24), data_hourly[l * 30 * 24 + j * 24: l * 30 * 24 + j * 24 + 24])
+                                plt.xlabel("Horas")
+                                plt.ylabel("Temperatura")
+                                plt.title(f"Temperaturas del día 15 del mes 8")
+                                plt.grid()
+                                plt.show()
+
+            counter += 1
 
 
 

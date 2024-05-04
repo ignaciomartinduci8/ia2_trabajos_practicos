@@ -1,11 +1,10 @@
 import matplotlib.pyplot as plt
 import time
-class Fuzzifier:
+class Fuzzifier: # PROBAR CAMBIOS ACA MUCHO MUCHO
 
     def __init__(self):
         self.moduleSatZ = 700
         self.plot()
-
 
     def f_hora(self, hora):
 
@@ -77,32 +76,32 @@ class Fuzzifier:
 
         # Negativo
 
-        if Z <= -250:
+        if Z <= -20:
             negativo = 1
 
-        elif -250 < Z <= 0:
-            negativo = (0 - Z) / 250
+        elif -20 < Z <= 0:
+            negativo = (0 - Z) / 20
 
         else:
             negativo = 0
 
         # Cero
 
-        if -250 <= Z <= 0:
-            cero = (Z + 250) / 250
+        if -20 <= Z <= 0:
+            cero = (Z + 20) / 20
 
-        elif 0 < Z <= 250:
-            cero = (250 - Z) / 250
+        elif 0 < Z <= 20:
+            cero = (20 - Z) / 20
 
         else:
             cero = 0
 
         # Positivo
 
-        if 0 <= Z <= 250:
-            positivo = Z / 250
+        if 0 <= Z <= 20:
+            positivo = Z / 20
 
-        elif 250 < Z:
+        elif 20 < Z:
             positivo = 1
 
         else:
@@ -155,7 +154,7 @@ class Fuzzifier:
         #plt.title("Funciones de pertenencia para la variable de control truncadas")
         #plt.grid()
         #plt.show()
-        #time.sleep(100)
+        #input()
 
         var_union = []
 

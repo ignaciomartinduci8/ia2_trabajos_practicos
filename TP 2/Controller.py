@@ -15,9 +15,9 @@ class Controller:
         self.horasDia = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
         self.horasNoche = [0, 1, 2, 3, 4, 5, 6, 7, 21, 22, 23]
         self.Ve = 25# random.randint(-5, 35)  # Temperatura externa
-        self.V = 25.5#random.randint(-5, 35)  # Temperatura interna
+        self.V = random.randint(-5, 35)  # Temperatura interna
         self.Vo = 25  # Temperatura deseada
-        self.R = 1000  # Resistencia térmica de la casa
+        self.R = 10000  # Resistencia térmica de la casa PROBAR CAMBIO
         self.Rv = 0.05 * self.R  # Resistencia térmica de la ventana, por defecot a medio abrir.
         self.apertura = 0.5
         self.historial_apertura = []
@@ -28,7 +28,6 @@ class Controller:
         self.Z = 0
         self.Z_cal = 0
         self.Z_enf = 0
-
 
         self.D_Hora = None  # Variable difusa de la hora
         self.D_Tpronostico = None  # Variable difusa de la temperatura pronosticada promedio
@@ -84,7 +83,7 @@ class Controller:
 
             self.calculateZs()
 
-            ## aca va el fuzzifier motor y defuzzifier
+            # aca va el fuzzifier motor y defuzzifier
 
             self.D_Hora = self.fuzzifier.f_hora(counter)
             self.D_Tpronostico = self.fuzzifier.f_Tpron(self.prom)
@@ -96,13 +95,13 @@ class Controller:
 
             self.apertura = self.fuzzifier.def_ven(self.D_Rv[0], self.D_Rv[1], self.D_Rv[2])
             self.historial_apertura.append(self.apertura)
-            self.Rv = ((100 - self.apertura) / 50) * self.R
+            self.Rv = ((100 - self.apertura) / .01) * self.R # PROBAR CAMBIO
 
             ##
 
             # 5T = 5RC = 24*3600
 
-            self.C = 24*3600 / (500 * 5 * (self.R + self.Rv))
+            self.C = 24*3600 / (1 * 5 * (self.R + self.Rv))
 
             self.historial_V.append(self.V)
 
@@ -120,9 +119,11 @@ class Controller:
             else:
                 self.Vo = 25
 
-            self.V = self.V + self.Z / (self.C*(self.R+self.Rv)*(self.V-25))
+            self.Rv= 0
 
-            #self.V = self.V + (self.Ve - self.V) / (self.C * (self.Rv + self.R))
+            #self.V = self.V + self.Z / (self.C*(self.R+self.Rv)*(self.V-25))
+
+            self.V = self.V + (self.Ve - self.V) / (self.C * (self.Rv + self.R))
 
             print("----------------------------------")
             print(f"> Temperatura interna: {self.V}")
@@ -141,6 +142,12 @@ class Controller:
         plt.title(f"Apertura de la ventana para un día de tipo {nom_dia}")
         plt.grid()
         plt.show()
+
+    def control(self):
+
+
+
+        pass
 
     def getDesiredTemp(self):
 
