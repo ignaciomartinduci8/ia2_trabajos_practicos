@@ -174,7 +174,7 @@ class Tablero:
             elif line == "\n" or line == "" or line == " " or line == " \n":
                 allPedidos.append({"orden": numero_orden, "pedidos": pedidos})
 
-            elif counter >= 16:
+            elif counter >= 16: # Límite de pedidos por orden
                 continue
 
             elif "P" in line:

@@ -14,7 +14,7 @@ class Aestrella:
 
     def encontrarCamino(self):
 
-        visitados = [{"punto": self.pinicial, "padre": None}]
+        visitados = [{"punto": self.pinicial, "padre": None, "costo":0}]
 
         pila_explorar = []
 
@@ -34,8 +34,9 @@ class Aestrella:
 
                     heuristica = abs(vecino.getCoords()[0] - self.pfinal[0]) + abs(vecino.getCoords()[1]
                                                                                    - self.pfinal[1])
-                    costo = abs(vecino.getCoords()[0] - self.pinicial[0]) + abs(vecino.getCoords()[1]
-                                                                                - self.pinicial[1])
+                    #costo = abs(vecino.getCoords()[0] - self.pinicial[0]) + abs(vecino.getCoords()[1]
+                                                                       #         - self.pinicial[1])
+                    costo = visitados[-1]["costo"] + 1
 
                     pila_explorar.append({"posicion": vecino.getCoords(), "vecino": vecino,
                                           "f_eval": heuristica + costo, "padre": self.pactual})
@@ -47,7 +48,7 @@ class Aestrella:
             self.pactual = pila_explorar[0]["vecino"].getCoords()
             pila_explorar.pop(0)
 
-            visitados.append({"punto": self.pactual, "padre": padre})
+            visitados.append({"punto": self.pactual, "padre": padre, "costo": costo})
 
         self.camino = []
 

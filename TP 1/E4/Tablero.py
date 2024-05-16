@@ -22,7 +22,7 @@ class Tablero:
 
         self.filas = 21
         self.columnas = 13
-        self.orderLimit = 1
+        self.orderLimit = 3
         self.pedidoLimit = 16
 
         self.coordsObj = []
@@ -314,8 +314,8 @@ class Tablero:
 
     def reordenarTablero(self):
 
-        N = 6
-        gens = 29 # +1
+        N = 20
+        gens = 20 # +1
         start = time.time()
 
         genoma = []
@@ -353,7 +353,7 @@ class Tablero:
 
             actual = time.time()
 
-            genotipos = [x for _, x in sorted(zip(fitness_vec, genotipos), key=lambda pair: pair[0])]
+            genotipos = [x for _, x in sorted(zip(fitness_vec, genotipos), key=lambda pair: pair[0], reverse=True)]
 
             elite_size = math.ceil(0.3333 * N)
 
@@ -367,9 +367,10 @@ class Tablero:
 
                 hijo1 = self.intercambio(hijo1)
                 hijo2 = self.intercambio(hijo2)
+                hijo1 = self.mezcla(hijo1, 6)
+                hijo2 = self.mezcla(hijo2, 6)
                 hijo1 = self.insercion(hijo1)
                 hijo2 = self.insercion(hijo2)
-
 
                 nuevos_genotipos[j+elite_size-1] = hijo1
                 nuevos_genotipos[j+elite_size] = hijo2
@@ -499,6 +500,14 @@ class Tablero:
 
         return hijo
 
+    def mezcla(self, hijo, cant_mut):
+        for _ in range(cant_mut):
+            idx1 = random.randint(0, len(hijo) - 1)
+            idx2 = random.randint(0, len(hijo) - 1)
+            hijo[idx1], hijo[idx2] = hijo[idx2], hijo[idx1]
+
+        return hijo
+
     def fitness(self, genotipos):
 
         fitness_vec = []
@@ -525,10 +534,16 @@ class Tablero:
 
         fit_max = max(fitness_vec)
         fit_sum = sum(fitness_vec)
+        prom_norm = 0
 
         for i in range(len(fitness_vec)):
+            prom_norm += fit_max - fitness_vec[i]
 
-            fitness_vec[i] = 1 - (fitness_vec[i] / fit_max)
+        for i in range(len(fitness_vec)):
+            fitness_vec[i] = (fit_max - fitness_vec[i]) / prom_norm
+            fitness_vec[i] = round(fitness_vec[i], 4)
+
+            #fitness_vec[i] = 1 - (fitness_vec[i] / fit_max)
 
         return fitness_vec
 
