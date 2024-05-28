@@ -5,6 +5,7 @@ from Fuzzifier import Fuzzifier
 from Motor import Motor
 import json
 import random
+import numpy as np
 import matplotlib.pyplot as plt
 
 class Controller:
@@ -147,10 +148,6 @@ class Controller:
             self.V_maximo_mayor = (self.V_maximo_mayor + (self.Ve - self.V_maximo_mayor) * 3600 /
                                    (self.C_maximo_mayor * (self.Rv_maximo_mayor + self.R)))
 
-            self.V_dot_media_centros = (self.Ve - self.V_media_centros) / (self.C_media_centros * (self.Rv_media_centros + self.R))
-
-            self.V_media_centros = self.V_dot_media_centros * 3600 + self.V_media_centros
-
             print("----------------------------------")
             print(f"> Temperatura interna media_centros: {self.V_media_centros}")
             print(f"> Apertura de la ventana media_centros: {self.apertura_media_centros}")
@@ -182,12 +179,113 @@ class Controller:
         plt.grid()
         plt.show()
 
-
     def control(self):
 
+        with open("./data/yearData.json", "r") as file:
+            data = json.load(file)
+
+        temp_days = []
+
+        for year in data:
+
+            for i in range(len(year)):
+
+                if 91 < i < 121:
+
+                    temp_days.append(year[f"day_{i}"])
+
+        self.pronostico = temp_days[0]
+        self.getDesiredTemp()
+
+        self.all_Vo = [self.Vo] * 8 + [25] * 12
+
+        plt.plot(range(0, 24), self.pronostico,"k" ,linewidth=1.5)
+        plt.plot(range(0, 20), self.all_Vo, "y")
+        plt.plot(range(0, 24), [25] * 24, "g")
+        plt.ylim([-10, 102])
+        plt.plot(0, self.V_media_centros, "r*")
+        plt.legend(["Temperatura externa", "Temperatura objetivo", "Temperatura deseada", "Temperatura interna"])
+        plt.ylabel("Temperatura")
+        plt.xlabel("Hora")
+        plt.grid()
+        plt.show()
+        input()
+
+        self.all_pronostico = copy.deepcopy(self.pronostico)
+
+        for i in range(len(temp_days)):
+
+            for j in range(0, 24):
+
+                if j == 20 and i < len(temp_days) - 1:
+
+                    self.pronostico = temp_days[i+1]
+                    self.all_pronostico += self.pronostico
+                    self.getDesiredTemp()
+                    self.all_Vo += [self.Vo] * 12 + [25] * 12
+
+                self.Ve = temp_days[i][j]
+                self.calculateZs()
+
+                self.D_Hora = self.fuzzifier.f_hora(j)
+                self.D_Tpronostico = self.fuzzifier.f_Tpron(self.prom)
+                self.D_Z_media_centros = self.fuzzifier.f_Z(self.Z_media_centros)
+                self.D_Z_enf_media_centros = self.fuzzifier.f_Z(self.Z_enf_media_centros)
+                self.D_Z_cal_media_centros = self.fuzzifier.f_Z(self.Z_cal_media_centros)
+
+                self.D_res_media_centros = self.motor.inference(self.D_Hora[0], self.D_Hora[1],
+                                                                self.D_Z_media_centros[0], self.D_Z_media_centros[1],
+                                                                self.D_Z_media_centros[2],
+                                                                self.D_Z_cal_media_centros[0],
+                                                                self.D_Z_cal_media_centros[1],
+                                                                self.D_Z_cal_media_centros[2],
+                                                                self.D_Z_enf_media_centros[0],
+                                                                self.D_Z_enf_media_centros[1],
+                                                                self.D_Z_enf_media_centros[2], self.D_Tpronostico[0],
+                                                                self.D_Tpronostico[1])
+
+                self.apertura_media_centros = self.fuzzifier.def_ven(self.D_res_media_centros[0],
+                                                                     self.D_res_media_centros[1],
+                                                                     self.D_res_media_centros[2], "MC")
+
+                self.historial_apertura_media_centros.append(self.apertura_media_centros)
+
+                self.Rv_media_centros = ((100 - self.apertura_media_centros) / 100) * self.R * 0.1  # PROBAR CAMBIO
+
+                self.C_media_centros = 24 * 3600 / (1 * 5 * (self.R + self.Rv_media_centros))
+
+                self.historial_V_media_centros.append(self.V_media_centros)
+
+                if 0 <= j <= 8:
+
+                    if self.prom < 21:
+                        self.Vo = 50
+
+                    elif self.prom > 28:
+                        self.Vo = 5
+
+                elif 8 < j < 20:
+                    self.Vo = 25
+
+                else:
+                    self.Vo = 25
+
+                self.V_media_centros = (self.V_media_centros + (self.Ve - self.V_media_centros) * 3600 /
+                                        (self.C_media_centros * (self.Rv_media_centros + self.R)))
 
 
-        pass
+                plt.plot(self.historial_apertura_media_centros, "b")
+                plt.plot(self.all_pronostico, "k")
+                plt.plot(self.all_Vo, "y")
+                plt.plot(self.historial_V_media_centros, "r")
+                plt.legend(["Apertura de la ventana", "Pronóstico", "Temperatura objetivo", "Temperatura interna"])
+                plt.xlabel("Hora")
+                plt.ylim([-10, 102])
+                plt.ylabel("Temperatura y Apertura")
+                plt.grid()
+                plt.title(f"Día {i} Hora {j} - MEDIA DE CENTROS")
+                plt.show()
+                input()
 
     def getDesiredTemp(self):
 

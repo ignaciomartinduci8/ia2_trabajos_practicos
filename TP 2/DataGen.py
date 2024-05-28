@@ -21,6 +21,9 @@ class DataGen:
 
             self.year = l
 
+            if self.year < 2019:
+                continue
+
             with open("data/bsas_st_temp.txt", "r") as file:
                 data = file.readlines()
 
@@ -122,7 +125,7 @@ class DataGen:
             daily_means_smooth = daily_means[::20]
             days_smooth = days[::20]
 
-            if (counter % 5) == 0:
+            if True:
 
                 plt.plot(days_smooth, daily_mins_smooth, label="Mínimas")
                 plt.plot(days_smooth, daily_maxs_smooth, label="Máximas")
