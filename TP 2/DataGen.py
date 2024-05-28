@@ -57,7 +57,7 @@ class DataGen:
 
                         index = i * 30 * 24 + j * 24 + k
 
-                        hora_pico = random.choice([13,14,15,16])
+                        hora_pico = random.choice([13, 14, 15, 16])
 
                         if 0 <= k <= hora_pico:
                             data_hourly[index] = data_clean[i][2]-7 + k * (data_clean[i][1]-data_clean[i][2]+7)/hora_pico

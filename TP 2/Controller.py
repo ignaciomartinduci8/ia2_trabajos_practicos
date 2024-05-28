@@ -1,3 +1,4 @@
+import copy
 import time
 
 from Fuzzifier import Fuzzifier
@@ -14,32 +15,42 @@ class Controller:
         self.motor = Motor()
         self.horasDia = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
         self.horasNoche = [0, 1, 2, 3, 4, 5, 6, 7, 21, 22, 23]
-        self.Ve = 25# random.randint(-5,    35)  # Temperatura externa
-        self.V = random.randint(-5, 35)  # Temperatura interna
+        self.Ve = 25 # random.randint(-5, 35)  # Temperatura externa
+        self.V_media_centros = random.randint(-5, 35)  # Temperatura interna
+        self.V_maximo_mayor = copy.deepcopy(self.V_media_centros)  # Temperatura interna
         self.Vo = 25  # Temperatura deseada
         self.R = 10000  # Resistencia térmica de la casa PROBAR CAMBIO
-        self.Rv = 0.05 * self.R  # Resistencia térmica de la ventana, por defecot a medio abrir.
-        self.apertura = 0.5
-        self.historial_apertura = []
-        self.historial_V = []
-        self.C = 24 * 3600 / 5 / (self.R + self.Rv)  # Capacidad térmica de la casa
+        self.Rv_media_centros = 0.05 * self.R  # Resistencia térmica de la ventana, por defecot a medio abrir.
+        self.Rv_maximo_mayor = 0.05 * self.R  # Resistencia térmica de la ventana, por defecot a medio abrir.
+        self.apertura_media_centros = 0.5
+        self.apertura_maximo_mayor = 0.5
+        self.historial_apertura_media_centros = []
+        self.historial_apertura_maximo_mayor = []
+        self.historial_V_media_centros = []
+        self.historial_V_maximo_mayor = []
+        self.C_media_centros = 24 * 3600 / 5 / (self.R + self.Rv_media_centros)  # Capacidad térmica de la casa
+        self.C_maximo_mayor = 24 * 3600 / 5 / (self.R + self.Rv_maximo_mayor)  # Capacidad térmica de la casa
         self.pronostico = []  # Pronóstico de la temperatura
         self.prom = None  # Temperatura promedio del día
-        self.Z = 0
-        self.Z_cal = 0
-        self.Z_enf = 0
+        self.Z_media_centros = 0
+        self.Z_cal_media_centros = 0
+        self.Z_enf_media_centros = 0
+        self.Z_maximo_mayor = 0
+        self.Z_cal_maximo_mayor = 0
+        self.Z_enf_maximo_mayor = 0
 
         self.D_Hora = None  # Variable difusa de la hora
         self.D_Tpronostico = None  # Variable difusa de la temperatura pronosticada promedio
-        self.D_Z = None  # Variable difusa de la variable Z
-        self.D_Z_cal = None  # Variable difusa de la variable Z calentamiento
-        self.D_Z_enf = None  # Variable difusa de la variable Z enfriamiento
+        self.D_Z_media_centros = None  # Variable difusa de la variable Z
+        self.D_Z_cal_media_centros = None  # Variable difusa de la variable Z calentamiento
+        self.D_Z_enf_media_centros = None  # Variable difusa de la variable Z enfriamiento
 
-        self.D_Rv = None  # Variable difusa de la resistencia térmica de la ventana
+        self.D_Z_maximo_mayor = None  # Variable difusa de la variable Z
+        self.D_Z_cal_maximo_mayor = None  # Variable difusa de la variable Z calentamiento
+        self.D_Z_enf_maximo_mayor = None  # Variable difusa de la variable Z enfriamiento
 
-
-        print(f"> Parámetros de control automático: R = {self.R} C = {self.C}")
-        print(f"> Constante de tiempo Tao = {self.R * self.C} segundos.")
+        self.D_res_media_centros = None  # Variable difusa de la resistencia térmica de la ventana
+        self.D_res_maximo_mayor = None  # Variable difusa de la resistencia térmica de la ventana
 
         pass
 
@@ -74,8 +85,10 @@ class Controller:
         self.plotTemp(title=f"Pronóstico de temperaturas para un dia de tipo {nom_dia}.")
 
         counter = 0
-        self.historial_apertura = []
-        self.historial_V = []
+        self.historial_apertura_media_centros = []
+        self.historial_apertura_maximo_mayor = []
+        self.historial_V_media_centros = []
+        self.historial_V_maximo_mayor = []
 
         for temp_hora in self.pronostico:
 
@@ -87,23 +100,30 @@ class Controller:
 
             self.D_Hora = self.fuzzifier.f_hora(counter)
             self.D_Tpronostico = self.fuzzifier.f_Tpron(self.prom)
-            self.D_Z = self.fuzzifier.f_Z(self.Z)
-            self.D_Z_enf = self.fuzzifier.f_Z(self.Z_enf)
-            self.D_Z_cal = self.fuzzifier.f_Z(self.Z_cal)
+            self.D_Z_media_centros = self.fuzzifier.f_Z(self.Z_media_centros)
+            self.D_Z_enf_media_centros = self.fuzzifier.f_Z(self.Z_enf_media_centros)
+            self.D_Z_cal_media_centros = self.fuzzifier.f_Z(self.Z_cal_media_centros)
+            self.D_Z_maximo_mayor = self.fuzzifier.f_Z(self.Z_maximo_mayor)
+            self.D_Z_enf_maximo_mayor = self.fuzzifier.f_Z(self.Z_enf_maximo_mayor)
+            self.D_Z_cal_maximo_mayor = self.fuzzifier.f_Z(self.Z_cal_maximo_mayor)
 
-            self.D_Rv = self.motor.inference(self.D_Hora[0], self.D_Hora[1], self.D_Z[0], self.D_Z[1], self.D_Z[2], self.D_Z_cal[0], self.D_Z_cal[1], self.D_Z_cal[2], self.D_Z_enf[0], self.D_Z_enf[1], self.D_Z_enf[2], self.D_Tpronostico[0], self.D_Tpronostico[1])
+            self.D_res_media_centros = self.motor.inference(self.D_Hora[0], self.D_Hora[1], self.D_Z_media_centros[0], self.D_Z_media_centros[1], self.D_Z_media_centros[2], self.D_Z_cal_media_centros[0], self.D_Z_cal_media_centros[1], self.D_Z_cal_media_centros[2], self.D_Z_enf_media_centros[0], self.D_Z_enf_media_centros[1], self.D_Z_enf_media_centros[2], self.D_Tpronostico[0], self.D_Tpronostico[1])
+            self.D_res_maximo_mayor = self.motor.inference(self.D_Hora[0], self.D_Hora[1], self.D_Z_maximo_mayor[0], self.D_Z_maximo_mayor[1], self.D_Z_maximo_mayor[2], self.D_Z_cal_maximo_mayor[0], self.D_Z_cal_maximo_mayor[1], self.D_Z_cal_maximo_mayor[2], self.D_Z_enf_maximo_mayor[0], self.D_Z_enf_maximo_mayor[1], self.D_Z_enf_maximo_mayor[2], self.D_Tpronostico[0], self.D_Tpronostico[1])
 
-            self.apertura = self.fuzzifier.def_ven(self.D_Rv[0], self.D_Rv[1], self.D_Rv[2])
-            self.historial_apertura.append(self.apertura)
-            self.Rv = ((100 - self.apertura) / .01) * self.R # PROBAR CAMBIO
-
-            ##
+            self.apertura_media_centros = self.fuzzifier.def_ven(self.D_res_media_centros[0], self.D_res_media_centros[1], self.D_res_media_centros[2], "MC")
+            self.apertura_maximo_mayor = self.fuzzifier.def_ven(self.D_res_maximo_mayor[0], self.D_res_maximo_mayor[1], self.D_res_maximo_mayor[2], "MM")
+            self.historial_apertura_media_centros.append(self.apertura_media_centros)
+            self.historial_apertura_maximo_mayor.append(self.apertura_maximo_mayor)
+            self.Rv_media_centros = ((100 - self.apertura_media_centros) / .01) * self.R # PROBAR CAMBIO
+            self.Rv_maximo_mayor = ((100 - self.apertura_maximo_mayor) / .01) * self.R # PROBAR CAMBIO
 
             # 5T = 5RC = 24*3600
 
-            self.C = 24*3600 / (1 * 5 * (self.R + self.Rv))
+            self.C_media_centros = 24*3600 / (10000 * 5 * (self.R + self.Rv_media_centros))
+            self.C_maximo_mayor = 24*3600 / (10000 * 5 * (self.R + self.Rv_maximo_mayor))
 
-            self.historial_V.append(self.V)
+            self.historial_V_media_centros.append(self.V_media_centros)
+            self.historial_V_maximo_mayor.append(self.V_maximo_mayor)
 
             if 0 <= counter <= 8:
 
@@ -119,29 +139,44 @@ class Controller:
             else:
                 self.Vo = 25
 
-            self.Rv= 0
-
             #self.V = self.V + self.Z / (self.C*(self.R+self.Rv)*(self.V-25))
 
-            self.V = self.V + (self.Ve - self.V) / (self.C * (self.Rv + self.R))
+            self.V_media_centros = (self.V_media_centros + (self.Ve - self.V_media_centros) /
+                                    (self.C_media_centros * (self.Rv_media_centros + self.R)))
+            self.V_maximo_mayor = (self.V_maximo_mayor + (self.Ve - self.V_maximo_mayor) /
+                                   (self.C_maximo_mayor * (self.Rv_maximo_mayor + self.R)))
 
             print("----------------------------------")
-            print(f"> Temperatura interna: {self.V}")
-            print(f"> Apertura de la ventana: {self.apertura}")
-            #print(f"> Resistencia térmica de la ventana: {self.Rv}")
-
+            print(f"> Temperatura interna media_centros: {self.V_media_centros}")
+            print(f"> Apertura de la ventana media_centros: {self.apertura_media_centros}")
+            print(f"> Temperatura interna maximo_mayor: {self.V_maximo_mayor}")
+            print(f"> Apertura de la ventana maximo_mayor: {self.apertura_maximo_mayor}")
             counter += 1
 
-        plt.plot(range(0, 24), self.historial_apertura)
+        plt.plot(range(0, 24), self.historial_apertura_media_centros)
         plt.plot(range(0, 24), self.pronostico)
         plt.plot(range(0, 24), [self.Vo] * 24)
-        plt.plot(range(0, 24), self.historial_V)
+        plt.plot(range(0, 24), self.historial_V_media_centros)
         plt.legend(["Apertura de la ventana", "Pronóstico", "Temperatura deseada", "Temperatura interna"])
         plt.xlabel("Hora")
+        plt.ylim([-10, 102])
         plt.ylabel("Temperatura y Apertura")
-        plt.title(f"Apertura de la ventana para un día de tipo {nom_dia}")
+        plt.title(f"Apertura de la ventana para un día de tipo {nom_dia} - MEDIA DE CENTROS")
         plt.grid()
         plt.show()
+
+        plt.plot(range(0, 24), self.historial_apertura_maximo_mayor)
+        plt.plot(range(0, 24), self.pronostico)
+        plt.plot(range(0, 24), [self.Vo] * 24)
+        plt.plot(range(0, 24), self.historial_V_maximo_mayor)
+        plt.legend(["Apertura de la ventana", "Pronóstico", "Temperatura deseada", "Temperatura interna"])
+        plt.xlabel("Hora")
+        plt.ylim([-10, 102])
+        plt.ylabel("Temperatura y Apertura")
+        plt.title(f"Apertura de la ventana para un día de tipo {nom_dia} - MAXIMO MAYOR")
+        plt.grid()
+        plt.show()
+
 
     def control(self):
 
@@ -174,11 +209,13 @@ class Controller:
 
     def calculateZs(self):
 
-        print(self.V, self.Ve)
+        self.Z_media_centros = (self.V_media_centros - 25) * (self.Ve - self.V_media_centros)
+        self.Z_cal_media_centros = (self.V_media_centros - 50) * (self.Ve - self.V_media_centros)
+        self.Z_enf_media_centros = (self.V_media_centros - 5) * (self.Ve - self.V_media_centros)
 
-        self.Z = (self.V - 25) * (self.Ve - self.V)
-        self.Z_cal = (self.V - 50) * (self.Ve - self.V)
-        self.Z_enf = (self.V - 5) * (self.Ve - self.V)
+        self.Z_maximo_mayor = (self.V_maximo_mayor - 25) * (self.Ve - self.V_maximo_mayor)
+        self.Z_cal_maximo_mayor = (self.V_maximo_mayor - 50) * (self.Ve - self.V_maximo_mayor)
+        self.Z_enf_maximo_mayor = (self.V_maximo_mayor - 5) * (self.Ve - self.V_maximo_mayor)
 
     def plotTemp(self, title=None):
 

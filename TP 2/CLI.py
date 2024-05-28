@@ -92,4 +92,4 @@ class CLI(Cmd):
         return args
 
     def preloop(self):
-        print('\n========== CLI de servidor ==========')
+        print('\n========== CLI de programa ==========')

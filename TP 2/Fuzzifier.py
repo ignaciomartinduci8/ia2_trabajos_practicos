@@ -109,7 +109,7 @@ class Fuzzifier: # PROBAR CAMBIOS ACA MUCHO MUCHO
 
         return [negativo, cero, positivo]
 
-    def def_ven(self, cerrar, centro, abrir):
+    def def_ven(self, cerrar, centro, abrir, defusificacion = "MC"):
 
         porcentaje = [i for i in range(0, 101)]
         var_cerrar = []
@@ -118,11 +118,11 @@ class Fuzzifier: # PROBAR CAMBIOS ACA MUCHO MUCHO
 
         for i in porcentaje:
 
-            if i <= 40:
+            if i <= 20:
                 var_cerrar.append(min(1, cerrar))
 
-            elif 40 <= i <= 50:
-                var_cerrar.append(min((50-i)/10, cerrar))
+            elif 20 <= i <= 50:
+                var_cerrar.append(min((20-i)/30, cerrar))
 
             else:
                 var_cerrar.append(0)
@@ -136,14 +136,22 @@ class Fuzzifier: # PROBAR CAMBIOS ACA MUCHO MUCHO
             else:
                 var_centro.append(0)
 
-            if 50 <= i <= 60:
-                var_abrir.append(min((i-50)/10, abrir))
+            if 50 <= i <= 80:
+                var_abrir.append(min((i-50)/30, abrir))
 
-            elif 60 < i:
+            elif i > 80:
                 var_abrir.append(min(1, abrir))
 
             else:
                 var_abrir.append(0)
+
+        contraer_variables = False
+
+        if contraer_variables:
+
+            var_cerrar = [value**2 for value in var_cerrar]
+            var_centro = [value**2 for value in var_centro]
+            var_abrir = [value**2 for value in var_abrir]
 
         #plt.plot(porcentaje, var_cerrar, label="Cerrar")
         #plt.plot(porcentaje, var_centro, label="Centro")
@@ -168,9 +176,21 @@ class Fuzzifier: # PROBAR CAMBIOS ACA MUCHO MUCHO
         for valor in var_union:
             suma += valor * var_union.index(valor)
 
-        centroide = suma / sum(var_union)
+        media_centros = suma / sum(var_union)
 
-        return centroide
+        maximo_mayor = 0
+
+        v_0 = var_union[0]
+
+        for valor in var_union:
+            if valor >= v_0:
+                v_0 = valor
+                maximo_mayor = var_union.index(valor)
+
+        if defusificacion == "MC":
+            return media_centros
+        if defusificacion == "MM":
+            return maximo_mayor
 
     def plot(self):
 
