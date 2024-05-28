@@ -1,6 +1,7 @@
 import json
 import random
 import matplotlib.pyplot as plt
+import os
 
 class DataGen:
 
@@ -12,9 +13,13 @@ class DataGen:
 
         counter = 0
 
-        for i in range(1991, 2023+1):
+        if(os.path.exists("data/yearData.json") == False):
+            with open("data/yearData.json", "w") as file:
+                json.dump([], file)
 
-            self.year = i
+        for l in range(1991, 2023+1):
+
+            self.year = l
 
             with open("data/bsas_st_temp.txt", "r") as file:
                 data = file.readlines()
@@ -58,7 +63,7 @@ class DataGen:
                             data_hourly[index] = data_clean[i][2]-7 + k * (data_clean[i][1]-data_clean[i][2]+7)/hora_pico
 
                         if hora_pico < k <= 23:
-                            data_hourly[index] = data_clean[i][1] + (k-hora_pico) * (data_clean[i][2]-7-data_clean[i][1])/(24-hora_pico)
+                            data_hourly[index] = data_clean[i][1] + (k-hora_pico) * (data_clean[i][2]-7-data_clean[i][1])/(23-hora_pico)
 
             data_json = {
                 "year": self.year
@@ -143,12 +148,12 @@ class DataGen:
                                 plt.title(f"Temperaturas del día 15 del mes 1")
                                 plt.grid()
                                 plt.show()
-                            if l == 7 and j == 15 and k==0:
+                            if l == 8 and j == 15 and k==0:
 
                                 plt.plot(range(24), data_hourly[l * 30 * 24 + j * 24: l * 30 * 24 + j * 24 + 24])
                                 plt.xlabel("Horas")
                                 plt.ylabel("Temperatura")
-                                plt.title(f"Temperaturas del día 15 del mes 8")
+                                plt.title(f"Temperaturas del día 15 del mes 9")
                                 plt.grid()
                                 plt.show()
 

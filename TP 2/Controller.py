@@ -14,7 +14,7 @@ class Controller:
         self.motor = Motor()
         self.horasDia = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
         self.horasNoche = [0, 1, 2, 3, 4, 5, 6, 7, 21, 22, 23]
-        self.Ve = 25# random.randint(-5, 35)  # Temperatura externa
+        self.Ve = 25# random.randint(-5,    35)  # Temperatura externa
         self.V = random.randint(-5, 35)  # Temperatura interna
         self.Vo = 25  # Temperatura deseada
         self.R = 10000  # Resistencia térmica de la casa PROBAR CAMBIO
