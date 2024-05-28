@@ -15,15 +15,15 @@ class Controller:
         self.motor = Motor()
         self.horasDia = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
         self.horasNoche = [0, 1, 2, 3, 4, 5, 6, 7, 21, 22, 23]
-        self.Ve = 25 # random.randint(-5, 35)  # Temperatura externa
-        self.V_media_centros = random.randint(-5, 35)  # Temperatura interna
-        self.V_maximo_mayor = copy.deepcopy(self.V_media_centros)  # Temperatura interna
+        self.Ve = 27 # random.randint(-5, 35)  # Temperatura externa
+        self.V_media_centros = 27  # Temperatura interna
+        self.V_maximo_mayor = 27  # Temperatura interna
         self.Vo = 25  # Temperatura deseada
         self.R = 10000  # Resistencia térmica de la casa PROBAR CAMBIO
         self.Rv_media_centros = 0.05 * self.R  # Resistencia térmica de la ventana, por defecot a medio abrir.
         self.Rv_maximo_mayor = 0.05 * self.R  # Resistencia térmica de la ventana, por defecot a medio abrir.
-        self.apertura_media_centros = 0.5
-        self.apertura_maximo_mayor = 0.5
+        self.apertura_media_centros = None
+        self.apertura_maximo_mayor = None
         self.historial_apertura_media_centros = []
         self.historial_apertura_maximo_mayor = []
         self.historial_V_media_centros = []
@@ -114,13 +114,14 @@ class Controller:
             self.apertura_maximo_mayor = self.fuzzifier.def_ven(self.D_res_maximo_mayor[0], self.D_res_maximo_mayor[1], self.D_res_maximo_mayor[2], "MM")
             self.historial_apertura_media_centros.append(self.apertura_media_centros)
             self.historial_apertura_maximo_mayor.append(self.apertura_maximo_mayor)
-            self.Rv_media_centros = ((100 - self.apertura_media_centros) / .01) * self.R # PROBAR CAMBIO
-            self.Rv_maximo_mayor = ((100 - self.apertura_maximo_mayor) / .01) * self.R # PROBAR CAMBIO
+
+            self.Rv_media_centros = ((100 - self.apertura_media_centros) / 100) * self.R * 0.1 # PROBAR CAMBIO
+            self.Rv_maximo_mayor = ((100 - self.apertura_maximo_mayor) / 100) * self.R * 0.1 # PROBAR CAMBIO
 
             # 5T = 5RC = 24*3600
 
-            self.C_media_centros = 24*3600 / (10000 * 5 * (self.R + self.Rv_media_centros))
-            self.C_maximo_mayor = 24*3600 / (10000 * 5 * (self.R + self.Rv_maximo_mayor))
+            self.C_media_centros = 24*3600 / (1 * 5 * (self.R + self.Rv_media_centros))
+            self.C_maximo_mayor = 24*3600 / (1 * 5 * (self.R + self.Rv_maximo_mayor))
 
             self.historial_V_media_centros.append(self.V_media_centros)
             self.historial_V_maximo_mayor.append(self.V_maximo_mayor)
@@ -141,10 +142,14 @@ class Controller:
 
             #self.V = self.V + self.Z / (self.C*(self.R+self.Rv)*(self.V-25))
 
-            self.V_media_centros = (self.V_media_centros + (self.Ve - self.V_media_centros) /
+            self.V_media_centros = (self.V_media_centros + (self.Ve - self.V_media_centros) * 3600 /
                                     (self.C_media_centros * (self.Rv_media_centros + self.R)))
-            self.V_maximo_mayor = (self.V_maximo_mayor + (self.Ve - self.V_maximo_mayor) /
+            self.V_maximo_mayor = (self.V_maximo_mayor + (self.Ve - self.V_maximo_mayor) * 3600 /
                                    (self.C_maximo_mayor * (self.Rv_maximo_mayor + self.R)))
+
+            self.V_dot_media_centros = (self.Ve - self.V_media_centros) / (self.C_media_centros * (self.Rv_media_centros + self.R))
+
+            self.V_media_centros = self.V_dot_media_centros * 3600 + self.V_media_centros
 
             print("----------------------------------")
             print(f"> Temperatura interna media_centros: {self.V_media_centros}")
